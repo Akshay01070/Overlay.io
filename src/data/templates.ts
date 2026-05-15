@@ -15,7 +15,7 @@ export const TEMPLATES: GreetingTemplate[] = [
     category: "love",
     isPremium: false,
     backgroundUrl:
-      "https://images.unsplash.com/photo-1518199266791-5375a57590ae?w=800&q=80",
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
     quote: [
       { text: "क्या हिसाब दूँ तुम्हें अपनी चाहत का" },
       {

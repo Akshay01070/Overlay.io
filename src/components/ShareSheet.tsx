@@ -5,8 +5,8 @@ import { downloadCardImage } from "@/lib/exportCard";
 import {
   copyLinkToClipboard,
   openEmailShare,
-  openWhatsApp,
   shareToInstagram,
+  shareToWhatsApp,
 } from "@/lib/shareLinks";
 
 interface ShareSheetProps {
@@ -67,12 +67,12 @@ export function ShareSheet({
     {
       id: "whatsapp",
       label: "WhatsApp",
-      description: "Share message with link",
+      description: imageUnavailable
+        ? "Image export required"
+        : "Send greeting image (no link)",
       icon: "💬",
-      run: async () => {
-        openWhatsApp(title, shareUrl);
-        return "Opening WhatsApp…";
-      },
+      disabled: imageUnavailable,
+      run: async () => shareToWhatsApp(blob, title),
     },
     {
       id: "instagram",
@@ -117,7 +117,7 @@ export function ShareSheet({
     try {
       const msg = await action.run();
       onDone(msg);
-      if (action.id !== "whatsapp" && action.id !== "email") {
+      if (action.id !== "email") {
         onClose();
       }
     } catch (e) {
