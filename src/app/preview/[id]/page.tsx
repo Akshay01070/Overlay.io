@@ -48,6 +48,7 @@ export default function PreviewPage() {
   }
 
   const locked = template.isPremium && !profile.isPremium;
+  const templateTitle = template.title;
 
   async function handleShare() {
     if (locked) {
@@ -60,7 +61,7 @@ export default function PreviewPage() {
 
     try {
       const blob = await exportCardAsImage("export-card");
-      const msg = await shareToWhatsApp(blob, template.title);
+      const msg = await shareToWhatsApp(blob, templateTitle);
       setMessage(msg);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
