@@ -22,6 +22,29 @@ export function isFirebaseConfigured(): boolean {
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 
+/** Turns Firebase Auth errors into actionable messages (e.g. unauthorized-domain on Vercel). */
+export function formatFirebaseAuthError(error: unknown): string {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code: string }).code)
+      : "";
+
+  if (code === "auth/unauthorized-domain") {
+    const host =
+      typeof window !== "undefined"
+        ? window.location.hostname
+        : "your deployed domain";
+    return (
+      `Firebase blocked sign-in: "${host}" is not an authorized domain. ` +
+      `In Firebase Console → Authentication → Settings → Authorized domains, add "${host}" ` +
+      `(no https://). For Vercel preview URLs, add each hostname separately.`
+    );
+  }
+
+  if (error instanceof Error) return error.message;
+  return "Sign-in failed";
+}
+
 export function getFirebaseAuth(): Auth | null {
   if (!isFirebaseConfigured()) return null;
 

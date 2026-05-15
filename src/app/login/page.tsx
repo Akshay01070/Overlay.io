@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { APP_NAME } from "@/lib/constants";
+import { formatFirebaseAuthError } from "@/lib/firebase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function LoginPage() {
       await signInWithGoogle();
       router.push("/profile-setup");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Google sign-in failed");
+      setError(formatFirebaseAuthError(e));
     } finally {
       setBusy(false);
     }
@@ -64,7 +65,7 @@ export default function LoginPage() {
       await signInWithEmail(email, password);
       router.push("/profile-setup");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Email sign-in failed");
+      setError(formatFirebaseAuthError(e));
     } finally {
       setBusy(false);
     }

@@ -49,7 +49,7 @@ export async function shareToWhatsApp(
       }
       try {
         await navigator.share(payload);
-        return "Choose WhatsApp to send your greeting image.";
+        return "";
       } catch (e) {
         if (e instanceof DOMException && e.name === "AbortError") {
           throw e;
