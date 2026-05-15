@@ -228,6 +228,4 @@ public/
 
 ---
 
-## License
 
-Private / demo project — adjust as needed for your use case.
