@@ -10,10 +10,7 @@ import { ShareSheet } from "@/components/ShareSheet";
 import { useAuth } from "@/context/AuthContext";
 import { APP_NAME } from "@/lib/constants";
 import { getTemplateById } from "@/data/templates";
-import {
-  exportCardAsImage,
-  tryNativeShare,
-} from "@/lib/exportCard";
+import { exportCardAsImage } from "@/lib/exportCard";
 
 export default function PreviewPage() {
   const params = useParams();
@@ -25,6 +22,8 @@ export default function PreviewPage() {
   const [premiumOpen, setPremiumOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareBlob, setShareBlob] = useState<Blob | null>(null);
+  const [shareExportError, setShareExportError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -33,8 +32,12 @@ export default function PreviewPage() {
     }
   }, [loading, user, router]);
 
-  if (!loading && !user) {
-    return null;
+  if (loading || !user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-500">Loading…</p>
+      </main>
+    );
   }
 
   if (!template) {
@@ -58,25 +61,21 @@ export default function PreviewPage() {
 
     setSharing(true);
     setMessage("");
+    setShareExportError(null);
+    setShareUrl(typeof window !== "undefined" ? window.location.href : "");
+
+    let blob: Blob | null = null;
     try {
-      const blob = await exportCardAsImage("export-card");
-      const shared = await tryNativeShare(blob, template!.title);
-      if (shared) {
-        setMessage("Shared successfully!");
-        return;
-      }
-      setShareBlob(blob);
-      setShareOpen(true);
+      blob = await exportCardAsImage("export-card");
     } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") {
-        return;
-      }
-      setMessage(
-        e instanceof Error ? e.message : "Could not prepare card image",
+      setShareExportError(
+        e instanceof Error ? e.message : "Could not export greeting image",
       );
-    } finally {
-      setSharing(false);
     }
+
+    setShareBlob(blob);
+    setShareOpen(true);
+    setSharing(false);
   }
 
   function handleSubscribe() {
@@ -140,7 +139,9 @@ export default function PreviewPage() {
       <ShareSheet
         open={shareOpen}
         blob={shareBlob}
+        shareUrl={shareUrl}
         title={template.title}
+        exportError={shareExportError}
         onClose={() => setShareOpen(false)}
         onDone={setMessage}
       />

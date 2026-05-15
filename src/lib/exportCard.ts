@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas";
+import { domToBlob } from "modern-screenshot";
 
 function slugify(title: string): string {
   return title
@@ -33,35 +33,24 @@ export async function exportCardAsImage(elementId: string): Promise<Blob> {
 
   await waitForImages(element);
 
-  const canvas = await html2canvas(element, {
-    useCORS: true,
-    allowTaint: true,
-    scale: 2,
+  const blob = await domToBlob(element, {
+    scale: Math.min(2, window.devicePixelRatio || 2),
     backgroundColor: "#000000",
-    logging: false,
-    imageTimeout: 20_000,
-    onclone: (clonedDoc) => {
-      const cloned = clonedDoc.getElementById(elementId);
-      if (!cloned) return;
-      cloned.querySelectorAll("img").forEach((node) => {
-        const img = node as HTMLImageElement;
-        if (img.src) {
-          img.crossOrigin = "anonymous";
-        }
-      });
+    type: "image/png",
+    timeout: 30_000,
+    fetch: {
+      requestInit: {
+        cache: "force-cache",
+        credentials: "same-origin",
+      },
     },
   });
 
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error("Failed to create image"));
-      },
-      "image/png",
-      1,
-    );
-  });
+  if (!blob) {
+    throw new Error("Failed to create image");
+  }
+
+  return blob;
 }
 
 export function downloadCardImage(blob: Blob, title: string): void {

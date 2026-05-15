@@ -74,16 +74,12 @@ function readStoredUser(): AuthUser | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() =>
-    typeof window === "undefined" ? null : readStoredUser(),
-  );
-  const [profile, setProfile] = useState<UserProfile>(() =>
-    typeof window === "undefined"
-      ? DEFAULT_PROFILE
-      : (loadProfile() ?? DEFAULT_PROFILE),
-  );
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [hydrated, setHydrated] = useState(false);
   const firebaseReady = isFirebaseConfigured();
-  const [loading, setLoading] = useState(firebaseReady);
+  const [authResolving, setAuthResolving] = useState(firebaseReady);
+  const loading = !hydrated || authResolving;
 
   const persistProfile = useCallback(
     (next: UserProfile, authMethod: AuthMethod | null = user?.method ?? null) => {
@@ -104,14 +100,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 );
 
   useEffect(() => {
-    const stored = loadProfile();
-    if (!stored) return;
-    void hydrateProfilePhoto(stored).then((hydrated) => {
-      if (hydrated.photoUrl !== stored.photoUrl) {
-        setProfile(hydrated);
-      }
-    });
-  }, []);
+    const storedUser = readStoredUser();
+    const storedProfile = loadProfile();
+    if (storedUser) {
+      setUser(storedUser);
+    }
+    const baseProfile = storedProfile ?? DEFAULT_PROFILE;
+    const profileForGuest =
+      storedUser?.method === "guest"
+        ? applyGuestProfile(baseProfile)
+        : baseProfile;
+    void hydrateProfilePhoto(profileForGuest).then(setProfile);
+    setHydrated(true);
+    if (!firebaseReady) {
+      setAuthResolving(false);
+    }
+  }, [firebaseReady]);
 
   const persistAuth = useCallback((auth: StoredAuth | null) => {
     if (auth) {
@@ -125,7 +129,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedAuth = loadStoredAuth();
     const auth = getFirebaseAuth();
-    if (!auth) return;
+    if (!auth) {
+      setAuthResolving(false);
+      return;
+    }
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -151,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (!storedAuth) {
         setUser(null);
       }
-      setLoading(false);
+      setAuthResolving(false);
     });
 
     return () => unsubscribe();

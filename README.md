@@ -25,7 +25,7 @@ Create personalized greeting cards with your name and photo, then preview and sh
 | Framework | [Next.js 16](https://nextjs.org) (App Router) |
 | UI | React 19, Tailwind CSS 4 |
 | Auth | Firebase Authentication (Google, Email/Password, Anonymous) |
-| Export | html2canvas (card → PNG) |
+| Export | modern-screenshot (card → PNG) |
 | Hosting | [Vercel](https://vercel.com) (recommended) |
 
 ---
@@ -199,7 +199,7 @@ public/
 ### Sharing
 
 1. User taps **Share** on the preview page.
-2. The card DOM is captured with **html2canvas** as a PNG.
+2. The card DOM is captured as a PNG (supports Tailwind v4 / modern CSS colors).
 3. On supported devices, the **Web Share API** opens the native share sheet.
 4. Otherwise, a sheet offers **Download**, **Copy image**, or **Share via apps** when available.
 
