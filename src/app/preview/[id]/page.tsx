@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import { GreetingCard } from "@/components/GreetingCard";
 import { PremiumModal } from "@/components/PremiumModal";
 import { ProfileMenu } from "@/components/ProfileMenu";
-import { ShareSheet } from "@/components/ShareSheet";
 import { useAuth } from "@/context/AuthContext";
 import { APP_NAME } from "@/lib/constants";
 import { getTemplateById } from "@/data/templates";
 import { exportCardAsImage } from "@/lib/exportCard";
+import { shareToWhatsApp } from "@/lib/shareLinks";
 
 export default function PreviewPage() {
   const params = useParams();
@@ -20,10 +20,6 @@ export default function PreviewPage() {
   const { profile, loading, user, setPremium } = useAuth();
   const [sharing, setSharing] = useState(false);
   const [premiumOpen, setPremiumOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareBlob, setShareBlob] = useState<Blob | null>(null);
-  const [shareExportError, setShareExportError] = useState<string | null>(null);
-  const [shareUrl, setShareUrl] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -61,21 +57,21 @@ export default function PreviewPage() {
 
     setSharing(true);
     setMessage("");
-    setShareExportError(null);
-    setShareUrl(typeof window !== "undefined" ? window.location.href : "");
 
-    let blob: Blob | null = null;
     try {
-      blob = await exportCardAsImage("export-card");
+      const blob = await exportCardAsImage("export-card");
+      const msg = await shareToWhatsApp(blob, template.title);
+      setMessage(msg);
     } catch (e) {
-      setShareExportError(
-        e instanceof Error ? e.message : "Could not export greeting image",
+      if (e instanceof DOMException && e.name === "AbortError") {
+        return;
+      }
+      setMessage(
+        e instanceof Error ? e.message : "Could not share greeting image",
       );
+    } finally {
+      setSharing(false);
     }
-
-    setShareBlob(blob);
-    setShareOpen(true);
-    setSharing(false);
   }
 
   function handleSubscribe() {
@@ -135,16 +131,6 @@ export default function PreviewPage() {
           </p>
         )}
       </div>
-
-      <ShareSheet
-        open={shareOpen}
-        blob={shareBlob}
-        shareUrl={shareUrl}
-        title={template.title}
-        exportError={shareExportError}
-        onClose={() => setShareOpen(false)}
-        onDone={setMessage}
-      />
 
       <PremiumModal
         open={premiumOpen}
